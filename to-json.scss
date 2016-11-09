@@ -1,0 +1,80 @@
+/**
+ * Parses the passed in variable and returns the json representation of it.
+ * 
+ * @param  {Mixed}  $to-convert The value to be converted to JSON format.
+ * @return {Object}             [
+ */
+@function to-json($to-convert) {
+
+  $type: type-of($to-convert);
+
+  /*
+   * Wrap in quotes for:
+   * String
+   * Color
+   */
+  @if ($type == string or $type == color) {
+    @return '"#{$to-convert}"';
+  }
+
+  /*
+   * If number check if unitless.
+   * If has units wrap in string.
+   */
+  @if ($type == number) {
+
+    /* If number has units wrap in quote */
+    @if (not(unitless($to-convert))) {
+      @return '"#{$to-convert}"';
+    }
+
+    @return $to-convert;
+  }
+
+  /*
+   * Do not format to-convert for:
+   * Boolean
+   */
+  @if ($type == bool) {
+    @return $to-convert;
+  }
+
+  /**
+   * If the variable is a list
+   * loop through and recursively convert to json.
+   */
+  @if ($type == list) {
+    $json: "[";
+
+    /* Loop through each item and recursively convert it to json */
+    @each $item in $to-convert {
+      $json: "#{$json}#{to-json($item)},";
+    }
+
+    /* Remove trailing comma */
+    $json: str-slice($json, 1, str-length($json) - 1);
+    $json: $json + "]";
+
+    @return $json;
+  }
+
+  /**
+   * If the variable is a map then it loops through the keys and recursively converts to json.
+   */
+  @if ($type == map) {
+    $json: '{';
+
+    @each $key, $value in $to-convert {
+      $json: '#{$json}"#{$key}":#{to-json($value)},';
+    }
+
+    /* Remove trailing comma */
+    $json: str-slice($json, 1, str-length($json) - 1);
+    $json: $json + "}";
+
+    @return $json;
+  }
+
+  /* Fallback return nothing */
+  @return "";
+}
